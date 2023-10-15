@@ -1,0 +1,30 @@
+version: "3.9"
+services:
+  db:
+    image: postgres:latest
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: history_rate
+    volumes:
+      - ./ddl/create_table.sql:/docker-entrypoint-initdb.d/init_create_table.sql
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 20s
+      retries: 5
+    restart: always
+
+  app:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    depends_on:
+      - db
+    links:
+      - db
+    command: ["sh", "-c", "sleep 10 && python /app/rate_from_api.py"] # Добавляем задержку в 10 секунд перед запуском приложения
+    volumes:
+      - ./python_script:/app
+  
